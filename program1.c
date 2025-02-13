@@ -22,35 +22,34 @@
 int lookup_and_connect(const char* host, const char* service);
 int sendall(int s, char* buf, int* len);
 
-int main(int argc, char* argv[]) {
-	const char* host;
+int main() {
+	const char* host = "www.ecst.csuchico.edu";
 	const char* port = "80";
-	char buf[MAX_LINE] ="GET /~kkredo/file.html HTTP/1.0\r\n\r\n";
+	char buf[MAX_LINE] = "GET /~kkredo/file.html HTTP/1.0\r\n\r\n";
 	int s;
 	int len;
-
-	if (argc == 2) {
-		host = argv[1];
-	} else {
-		fprintf(stderr, "usage: %s host\n", argv[0]);
-		exit(1);
-	}
+	char msg[INT_MAX];
+	int i;
 
 	/* Lookup IP and connect to server */
 	if ((s = lookup_and_connect(host, SERVER_PORT)) < 0) {
 		exit(1);
 	}
 
-	/* Main loop: get and send lines of text */
-	while (fgets(buf, sizeof(buf), stdin)) {
-		buf[MAX_LINE - 1] = '\0';
-		len = strlen(buf) + 1;
-		if (send(s, buf, len, 0) == -1) {
-			perror("stream-talk-client: send");
-			close(s);
-			exit(1);
-		}
+	len = strlen(buf);
+	if (sendall(s, buf, &len) == -1) {
+		perror("sendall");
+		printf("We only sent %d bytes because of the error!\n", len);
 	}
+
+	for (len = 0; recv(s, buf, 1, 0); len++) {
+		msg[len] = buf[0];
+	}
+
+	for (i = 0; i < len; i++) {
+		printf(msg[i]);
+	}
+	printf("\n");
 
 	close(s);
 
